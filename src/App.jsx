@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { CheckCircle, Trash2, Download, Printer, PlusCircle, RefreshCcw, Search } from "lucide-react";
+import { CheckCircle, Trash2, Download, Printer, PlusCircle, RefreshCcw, Search, DollarSign } from "lucide-react";
 
 const KEY = "trade_checklist_records_v1";
 
@@ -51,9 +51,27 @@ export default function App() {
   const addRecord = () => {
     if (!form.company.trim()) return alert("请填写公司名称");
     if (!form.newsTitle.trim()) return alert("请填写新闻标题或摘要");
-    const rec = { id: crypto.randomUUID(), ...form };
+    const rec = { id: crypto.randomUUID(), trades: [], ...form };
     setRecords([rec, ...records]);
     setForm({ ...emptyForm, date: new Date().toISOString().slice(0, 16) });
+  };
+
+  const addTrade = (id) => {
+    const side = prompt("买/卖 (buy/sell)", "buy");
+    if (!side) return;
+    const time = prompt("时间", new Date().toISOString().slice(0, 16));
+    const price = prompt("价格", "");
+    const quantity = prompt("数量", "");
+    const position = prompt("仓位比例(%)", "");
+    const reason = prompt("交易原因/情绪备注", "");
+    const trade = { id: crypto.randomUUID(), side, time, price, quantity, position, reason };
+    const updated = records.map((r) => r.id === id ? { ...r, trades: [...(r.trades || []), trade] } : r);
+    setRecords(updated);
+  };
+
+  const removeTrade = (rid, tid) => {
+    const updated = records.map((r) => r.id === rid ? { ...r, trades: (r.trades || []).filter(t => t.id !== tid) } : r);
+    setRecords(updated);
   };
 
   const removeRecord = (id) => setRecords(records.filter(r => r.id !== id));
@@ -303,21 +321,36 @@ export default function App() {
                   <div className="text-sm text-neutral-700">{r.newsTitle}</div>
                   <div className="text-xs text-neutral-500">{new Date(r.date).toLocaleString()}</div>
                 </div>
-                <div className="md:flex-1 grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
-                  <div className="p-3 bg-neutral-50 rounded-xl border">
-                    <div className="font-medium mb-1">买入</div>
-                    <div className="whitespace-pre-wrap">{r.buyPlan || '—'}</div>
+                <div className="md:flex-1 space-y-3">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
+                    <div className="p-3 bg-neutral-50 rounded-xl border">
+                      <div className="font-medium mb-1">买入</div>
+                      <div className="whitespace-pre-wrap">{r.buyPlan || '—'}</div>
+                    </div>
+                    <div className="p-3 bg-neutral-50 rounded-xl border">
+                      <div className="font-medium mb-1">卖出</div>
+                      <div className="whitespace-pre-wrap">{r.sellPlan || '—'}</div>
+                    </div>
+                    <div className="p-3 bg-neutral-50 rounded-xl border">
+                      <div className="font-medium mb-1">观望/备注</div>
+                      <div className="whitespace-pre-wrap">{r.watchPlan || '—'}</div>
+                    </div>
                   </div>
-                  <div className="p-3 bg-neutral-50 rounded-xl border">
-                    <div className="font-medium mb-1">卖出</div>
-                    <div className="whitespace-pre-wrap">{r.sellPlan || '—'}</div>
-                  </div>
-                  <div className="p-3 bg-neutral-50 rounded-xl border">
-                    <div className="font-medium mb-1">观望/备注</div>
-                    <div className="whitespace-pre-wrap">{r.watchPlan || '—'}</div>
-                  </div>
+                  {r.trades && r.trades.length > 0 && (
+                    <div className="space-y-2 text-xs">
+                      {r.trades.map((t) => (
+                        <div key={t.id} className="flex items-center justify-between p-2 bg-neutral-50 rounded-xl border">
+                          <div>{new Date(t.time).toLocaleString()} {t.side === 'buy' ? '买入' : '卖出'} {t.price} x {t.quantity} ({t.position}%) {t.reason && `- ${t.reason}`}</div>
+                          <button onClick={() => removeTrade(r.id, t.id)} className="text-red-600">删除</button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
                 <div className="md:w-32 flex md:flex-col gap-2 md:items-stretch">
+                  <button onClick={() => addTrade(r.id)} className="px-3 py-2 rounded-xl border bg-white hover:bg-neutral-50 text-sm flex items-center gap-1">
+                    <DollarSign size={16}/> 记录交易
+                  </button>
                   <button onClick={() => {
                     const updated = records.map((x) => x.id === r.id ? { ...x, notes: (x.notes || "") + (x.notes?.includes('✅') ? '' : ' ✅ 已复盘') } : x);
                     setRecords(updated);
