@@ -30,6 +30,8 @@ jobs:
       # 关键补丁：配置 Pages（没有这个就 404）
       - name: Configure Pages
         uses: actions/configure-pages@v5
+        with:
+          enablement: true
 
       - name: Install deps
         run: npm install
