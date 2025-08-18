@@ -27,11 +27,12 @@ jobs:
           # 没有 package-lock 就不要开缓存，省得报错
           # cache: 'npm'
 
-      # 关键补丁：配置 Pages（没有这个就 404）
+      # 关键补丁：配置 Pages（首次启用可能返回 404，允许继续构建）
       - name: Configure Pages
         uses: actions/configure-pages@v5
         with:
           enablement: true
+        continue-on-error: true
 
       - name: Install deps
         run: npm install
